@@ -9,15 +9,27 @@ const resolvers = {
   },
   Mutation: {
     async createLink(root, { url, slug }, { models }) {
-      const matchingSlug = await models.Link.findOne({ where: { slug: slug } });
-      console.log(matchingSlug);
+      const checkForMatch = async (slugToTry) => {
+        return await models.Link.findOne({ where: { slug: slugToTry } });
+      };
+      let finalSlug = "";
+      const matchingSlug = slug ? await checkForMatch(slug) : null;
       if (!matchingSlug) {
+        if (!slug) {
+          let slugTaken = true;
+          while (slugTaken) {
+            finalSlug = Math.random().toString(36).substr(2, 5);
+            slugTaken = await checkForMatch(finalSlug);
+          }
+        } else {
+          finalSlug = slug;
+        }
         return models.Link.create({
           url,
-          slug
+          slug: finalSlug
         });
       } else {
-        console.log("slug taken");
+        return { error: "Slug taken" };
       }
     }
   }
